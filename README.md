@@ -32,7 +32,7 @@ The workspace provided in the SFND classroom comes preinstallated with everythin
 
    ```sh
    cd ~
-   git clone https://github.com/udacity/SFND_Lidar_Obstacle_Detection.git
+   git clone https://github.com/andrea-nisti/SFND_Lidar_Obstacle_Detection.git
    ```
 
 2.  Edit [CMakeLists.txt](https://github.com/udacity/SFND_Lidar_Obstacle_Detection/blob/master/CMakeLists.txt) as follows:
@@ -79,47 +79,6 @@ The workspace provided in the SFND classroom comes preinstallated with everythin
 
 You can either build PCL from source (for v1.11) or use the older version.
 
-### MAC
-
-#### Install via Homebrew
-1. install [homebrew](https://brew.sh/)
-2. update homebrew 
-	```bash
-	$> brew update
-	```
-3. add  homebrew science [tap](https://docs.brew.sh/Taps) 
-	```bash
-	$> brew tap brewsci/science
-	```
-4. view pcl install options
-	```bash
-	$> brew options pcl
-	```
-5. install PCL 
-	```bash
-	$> brew install pcl
-	```
-
-6. Clone this github repo
-
-   ```shell
-   cd ~
-   git clone https://github.com/udacity/SFND_Lidar_Obstacle_Detection.git
-   ```
-
-7. Edit the CMakeLists.txt file as shown in Step 2 of Ubuntu installation instructions above.
-
-8. Execute the following commands in a terminal
-
-   ```shell
-   cd ~/SFND_Lidar_Obstacle_Detection
-   mkdir build && cd build
-   cmake ..
-   make
-   ./environment
-   ```
-If you get build errors related to Qt5, make sure that the path for Qt5 is correctly set in .bash_profile or .zsh_profile (Refer [#45](https://github.com/udacity/SFND_Lidar_Obstacle_Detection/issues/45))
-
 ### WINDOWS
 
 #### Install via cvpkg
@@ -130,7 +89,7 @@ If you get build errors related to Qt5, make sure that the path for Qt5 is corre
 
    ```shell
    cd ~
-   git clone https://github.com/udacity/SFND_Lidar_Obstacle_Detection.git
+   git clone https://github.com/andrea-nisti/SFND_Lidar_Obstacle_Detection.git
    ```
 
 3. Edit the CMakeLists.txt file as shown in Step 2 of Ubuntu installation instructions above.
