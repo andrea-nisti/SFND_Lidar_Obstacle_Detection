@@ -12,6 +12,7 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/common/transforms.h>
+#include <boost/filesystem.hpp>
 #include <iostream> 
 #include <string>  
 #include <vector>
