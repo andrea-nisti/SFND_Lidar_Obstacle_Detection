@@ -72,7 +72,7 @@ std::unordered_set<int> Ransac3D(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int 
 			inliers.insert(rand() % (cloud->points.size()));
 		}
 
-		// Randomly sample subset and fit line
+		// Randomly sample subset and fit plane
 		auto itr{inliers.begin()};
 		float x1{cloud->points[*itr].x};
 		float y1{cloud->points[*itr].y};
@@ -85,10 +85,13 @@ std::unordered_set<int> Ransac3D(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int 
 		float x3{cloud->points[*itr].x};
 		float y3{cloud->points[*itr].y};
 		float z3{cloud->points[*itr].z};
+		
+		// find plane constants
+		auto a{(y2 - y1) * (z3 - z1) - (z2 - z1) * (y3 - y1)};
+		auto b{(z2 - z1) * (x3 - x1) - (x2 - x1) * (z3 - z1)};
+		auto c{(x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1)};
+		auto d{-(a*x1 + b*y1 + c*z1)};
 
-		float a{y1 - y2};
-		float b{x2 - x1};
-		float c{x1 * y2 + x2 * y1};
 
 		for (size_t index = 0; index < cloud->points.size(); index++)
 		{
@@ -97,11 +100,8 @@ std::unordered_set<int> Ransac3D(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int 
 				continue;
 			}
 
-			float x3{cloud->points[index].x};
-			float y3{cloud->points[index].y};
-
 			pcl::PointXYZ point{cloud->points[index]};
-			float d{fabs(a * x3 + b * y3 + y3 * c) / sqrt(a * a + b * b)};
+			float d{fabs(a * point.x + b * point.y + c * point.z + d) / sqrt(a*a + b*b + c*c)};
 			if (d <= distanceTol)
 			{
 				inliers.insert(index);
@@ -181,7 +181,7 @@ int main()
 	// Create data
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData3D();
 
-	std::unordered_set<int> inliers = Ransac(cloud, 10000, 0.2);
+	std::unordered_set<int> inliers = Ransac3D(cloud, 100000, 5);
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudInliers(new pcl::PointCloud<pcl::PointXYZ>());
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudOutliers(new pcl::PointCloud<pcl::PointXYZ>());
