@@ -113,30 +113,31 @@ struct KdTree
 			for (auto &component : di)
 			{
 				component = fabs(node->point.at(idx) - target.at(idx));
+				++idx;
 			}
 
 			auto is_in_box{std::all_of(di.cbegin(), di.cend(), [distanceTol](float comp)
-									   {return comp <= distanceTol; })};
+									   { return comp <= distanceTol; })};
 
 			if (is_in_box)
 			{
 				// compute distance : e.g. sqrt(x*x + y*y + z*z)
 				float d{sqrtf(std::accumulate(di.begin(), di.end(), 0, [](float accumulator, float comp)
-												   {return accumulator + comp *comp; }))};
+											  { return accumulator + comp * comp; }))};
 				if (d <= distanceTol)
 				{
 					ids.push_back((node->id));
 				}
 			}
 
-			if ((target.at(depth % target.size()) + distanceTol) > node->point.at(depth % target.size()))
-			{
-				searchHelper(target, node->right, distanceTol, ids, ++depth);
-			}
-
 			if ((target.at(depth % target.size()) - distanceTol) < node->point.at(depth % target.size()))
 			{
 				searchHelper(target, node->left, distanceTol, ids, ++depth);
+			}
+
+			if ((target.at(depth % target.size()) + distanceTol) > node->point.at(depth % target.size()))
+			{
+				searchHelper(target, node->right, distanceTol, ids, ++depth);
 			}
 		}
 	}
