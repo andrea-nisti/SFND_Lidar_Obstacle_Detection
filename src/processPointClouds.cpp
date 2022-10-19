@@ -68,7 +68,7 @@ typename pcl::PointCloud<PointT>::Ptr ProcessPointClouds<PointT>::FilterCloud(ty
 template <typename PointT>
 OutputPairType<PointT> ProcessPointClouds<PointT>::SeparateClouds(pcl::PointIndices::Ptr inliers, typename pcl::PointCloud<PointT>::Ptr cloud)
 {
-    // TODO: Create two new point clouds, one cloud with obstacles and other with segmented plane
+    // Create two new point clouds, one cloud with obstacles and other with segmented plane
     auto obst_cloud{std::make_unique<pcl::PointCloud<PointT>>()};
     auto plane_cloud{std::make_unique<pcl::PointCloud<PointT>>()};
 
@@ -96,9 +96,8 @@ OutputPairType<PointT> ProcessPointClouds<PointT>::SegmentPlane(typename pcl::Po
     auto startTime = std::chrono::steady_clock::now();
     auto inliers{std::make_unique<pcl::PointIndices>()};
 
-    // TODO:: Fill in this function to find inliers for the cloud.
     // Create the segmentation object
-    pcl::SACSegmentation<pcl::PointXYZ> seg;
+    pcl::SACSegmentation<PointT> seg;
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 
     seg.setOptimizeCoefficients(true);
