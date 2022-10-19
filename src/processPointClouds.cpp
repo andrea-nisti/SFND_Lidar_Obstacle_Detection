@@ -23,13 +23,46 @@ typename pcl::PointCloud<PointT>::Ptr ProcessPointClouds<PointT>::FilterCloud(ty
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
 
-    // TODO:: Fill in the function to do voxel grid point reduction and region based filtering
+    typename pcl::PointCloud<PointT>::Ptr cloud_filtered(new pcl::PointCloud<PointT>());
+    
+    // Create the filtering object: down-sample the dataset using a given leaf size
+    pcl::VoxelGrid<PointT> vg;
+    vg.setInputCloud(cloud);
+    vg.setLeafSize(filterRes, filterRes, filterRes);
+    vg.filter(*cloud_filtered);
+
+    pcl::CropBox<PointT> region(true);
+    region.setMin(minPoint);
+    region.setMax(maxPoint);
+    region.setInputCloud(cloud_filtered);
+    region.filter(*cloud_filtered);
+
+    std::vector<int> indices;
+    
+    region.setMin(Eigen::Vector4f(-1.5, -1.7, -1, 1));
+    region.setMax(Eigen::Vector4f(2.6, 1.7, -0.4, 1));
+    region.setInputCloud(cloud_filtered);
+    region.filter(indices);
+
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
+    for (int index : indices)
+    {
+        inliers->indices.push_back(index);
+    }
+
+    
+    pcl::ExtractIndices<PointT> extract;
+    
+    extract.setInputCloud(cloud_filtered);
+    extract.setIndices(inliers);
+    extract.setNegative(true);
+    extract.filter(*cloud_filtered);
 
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
     std::cout << "filtering took " << elapsedTime.count() << " milliseconds" << std::endl;
 
-    return cloud;
+    return cloud_filtered;
 }
 
 template <typename PointT>
@@ -117,7 +150,7 @@ std::vector<typename pcl::PointCloud<PointT>::Ptr> ProcessPointClouds<PointT>::C
         for (const auto &idx : cluster.indices)
         {
             cloud_cluster->push_back((*cloud)[idx]);
-        } 
+        }
         cloud_cluster->width = cloud_cluster->size();
         cloud_cluster->height = 1;
         cloud_cluster->is_dense = true;

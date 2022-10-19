@@ -47,8 +47,8 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr &viewer)
     // Create lidar sensor
     auto lidar_ptr{std::make_shared<Lidar>(cars, 0)};
     pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_ptr{lidar_ptr->scan()};
-    //renderRays(viewer, Vect3{0.0, 0.0, cars.at(0).dimensions.z + 1}, point_cloud_ptr);
-    renderPointCloud(viewer,point_cloud_ptr, "Cloudio", Color{0,0,1});
+    // renderRays(viewer, Vect3{0.0, 0.0, cars.at(0).dimensions.z + 1}, point_cloud_ptr);
+    renderPointCloud(viewer, point_cloud_ptr, "Cloudio", Color{0, 0, 1});
     //  Create point processor
     ProcessPointClouds<pcl::PointXYZ> processor{};
     auto segments{processor.SegmentPlane(point_cloud_ptr, 1000, 0.2)};
@@ -70,6 +70,21 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr &viewer)
         renderBox(viewer, box, clusterId);
         ++clusterId;
     }
+}
+
+void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer)
+{
+    // ----------------------------------------------------
+    // -----Open 3D viewer and display City Block     -----
+    // ----------------------------------------------------
+
+    ProcessPointClouds<pcl::PointXYZI> pointProcessorI{};
+    pcl::PointCloud<pcl::PointXYZI>::Ptr inputCloud = pointProcessorI.loadPcd("../src/sensors/data/pcd/data_1/0000000000.pcd");
+    // renderPointCloud(viewer, inputCloud, "inputCloud");
+
+    // filter point cloud
+    auto filterCloud{pointProcessorI.FilterCloud(inputCloud, 0.3, Eigen::Vector4f(-30, -7.0, -3.5, 1), Eigen::Vector4f(30, 7.0, 3.5, 1))};
+    renderPointCloud(viewer, filterCloud, "filterCloud");
 }
 
 // setAngle: SWITCH CAMERA ANGLE {XY, TopDown, Side, FPS}
@@ -109,7 +124,7 @@ int main(int argc, char **argv)
     pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
     CameraAngle setAngle = XY;
     initCamera(setAngle, viewer);
-    simpleHighway(viewer);
+    cityBlock(viewer);
 
     while (!viewer->wasStopped())
     {
