@@ -172,7 +172,7 @@ std::unordered_set<int> Ransac3D(typename pcl::PointCloud<PointT>::Ptr cloud, in
 
             auto point{cloud->points[index]};
             auto d0{sqrtf(a * a + b * b + c * c)};
-            float distance{fabs(a * point.x + b * point.y + c * point.z + d) / d0};
+            auto distance{fabs(a * point.x + b * point.y + c * point.z + d) / d0};
 
             // If distance is smaller than threshold count it as inlier
             if (distance <= distanceTol)
@@ -273,7 +273,9 @@ std::vector<typename pcl::PointCloud<PointT>::Ptr> ProcessPointClouds<PointT>::C
     for (size_t index = 0; index < cloud->points.size(); ++index)
     {
         const auto& point{cloud->points.at(index)};
-        points.emplace_back(std::vector<float>{point.x, point.y, point.z});
+        // cluster on x and y to make the result more stable. Adding third dimension makes clustering flickering for some reason ¯\_(ツ)_/¯
+        // clustering on z can be done simply with:  points.emplace_back(std::vector<float>{point.x, point.y, point.z});
+        points.emplace_back(std::vector<float>{point.x, point.y});
         tree->insert(points.back(), index);
     }
 
