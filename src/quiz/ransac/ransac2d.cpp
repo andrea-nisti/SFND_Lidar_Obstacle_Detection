@@ -99,11 +99,11 @@ std::unordered_set<int> Ransac3D(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int 
 			{
 				continue;
 			}
-
+			
 			auto point{cloud->points[index]};
 			auto d0{sqrtf(a*a + b*b + c*c)};
-			float d{fabs(a * point.x + b * point.y + c * point.z + d) / d0};
-			if (d <= distanceTol)
+			float distance{fabs(a * point.x + b * point.y + c * point.z + d) / d0};
+			if (distance <= distanceTol)
 			{
 				inliers.insert(index);
 			}
@@ -156,8 +156,8 @@ std::unordered_set<int> Ransac(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int ma
 			float y3{cloud->points[index].y};
 
 			pcl::PointXYZ point{cloud->points[index]};
-			float d{fabs(a * x3 + b * y3 + y3 * c) / sqrt(a * a + b * b)};
-			if (d <= distanceTol)
+			float distance{fabs(a * x3 + b * y3 + y3 * c) / sqrt(a * a + b * b)};
+			if (distance <= distanceTol)
 			{
 				inliers.insert(index);
 			}

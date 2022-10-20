@@ -20,6 +20,8 @@
 #include <chrono>
 #include "render/box.h"
 
+#include "kdtree.h"
+
 template <typename PointT>
 using OutputPairType = std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr>;
 

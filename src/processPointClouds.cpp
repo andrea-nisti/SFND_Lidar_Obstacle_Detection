@@ -107,6 +107,7 @@ OutputPairType<PointT> ProcessPointClouds<PointT>::SegmentPlane(typename pcl::Po
     seg.setDistanceThreshold(distanceThreshold);
     seg.setInputCloud(cloud);
     seg.segment(*inliers, *coefficients);
+
     if (inliers->indices.size() == 0)
     {
         PCL_ERROR("Could not estimate a planar model for the given dataset.\n");
@@ -114,12 +115,14 @@ OutputPairType<PointT> ProcessPointClouds<PointT>::SegmentPlane(typename pcl::Po
     }
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+
     std::cout << "plane segmentation took " << elapsedTime.count() << " milliseconds" << std::endl;
 
     OutputPairType<PointT> segResult = SeparateClouds(std::move(inliers), cloud);
     return segResult;
 }
 
+// ************************* STUDENT CODE FOR RANSAC **************************************************************
 template <typename PointT>
 std::unordered_set<int> Ransac3D(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceTol)
 {
@@ -128,7 +131,8 @@ std::unordered_set<int> Ransac3D(typename pcl::PointCloud<PointT>::Ptr cloud, in
     // Will be used to obtain a seed for the random number engine
     srand(time(NULL));
 
-    if(cloud == nullptr) return inliersResult;
+    if (cloud == nullptr)
+        return inliersResult;
 
     // For max iterations
     while (maxIterations--)
@@ -167,9 +171,9 @@ std::unordered_set<int> Ransac3D(typename pcl::PointCloud<PointT>::Ptr cloud, in
             }
 
             auto point{cloud->points[index]};
-            auto d0{sqrtf(a*a + b*b + c*c)};
+            auto d0{sqrtf(a * a + b * b + c * c)};
             float distance{fabs(a * point.x + b * point.y + c * point.z + d) / d0};
-            
+
             // If distance is smaller than threshold count it as inlier
             if (distance <= distanceTol)
             {
@@ -192,11 +196,7 @@ OutputPairType<PointT> ProcessPointClouds<PointT>::SegmentPlaneRansac(typename p
 {
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
-
-    // ************STUDENT IMPL
     auto inliers_result{Ransac3D<PointT>(cloud, maxIterations, distanceThreshold)};
-
-    // *************STUDENT IMPL END
 
     // adapt to pcl container
     pcl::PointIndices::Ptr inliers_out(new pcl::PointIndices());
@@ -205,11 +205,11 @@ OutputPairType<PointT> ProcessPointClouds<PointT>::SegmentPlaneRansac(typename p
         inliers_out->indices.push_back(i);
     }
 
-    // if (inliers_out->indices.empty())
-    // {
-    //     PCL_ERROR("Could not estimate a planar model for the given dataset.\n");
-    //     return OutputPairType<PointT>{};
-    // }
+    if (inliers_out->indices.empty())
+    {
+        PCL_ERROR("Could not estimate a planar model for the given dataset.\n");
+        return OutputPairType<PointT>{};
+    }
 
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
@@ -217,6 +217,91 @@ OutputPairType<PointT> ProcessPointClouds<PointT>::SegmentPlaneRansac(typename p
 
     OutputPairType<PointT> segResult = SeparateClouds(std::move(inliers_out), cloud);
     return segResult;
+}
+
+// ************************* STUDENT CODE FOR EUCLIDEAN CLUSTERING ****************************************************************
+namespace
+{
+    void euclideanClusterHelper(const std::vector<std::vector<float>> &points, std::vector<int> &cluster, euclidean_clustering::KdTree *tree, std::vector<bool> &visited, const size_t point_id, float distanceTol)
+    {
+        // mark current point as processed and add it to the current cluster
+        visited.at(point_id) = true;
+        cluster.push_back(point_id);
+
+        // get a list of every nearby point and iterate through it
+        auto neighbors{tree->search(points.at(point_id), distanceTol)};
+        for (const auto &neighbor_id : neighbors)
+        {
+            if (not visited.at(neighbor_id))
+                euclideanClusterHelper(points, cluster, tree, visited, neighbor_id, distanceTol);
+        }
+    }
+
+    std::vector<std::vector<int>> euclideanCluster(const std::vector<std::vector<float>> &points, euclidean_clustering::KdTree *tree, float distanceTol)
+    {
+        std::vector<std::vector<int>> clusters;
+        std::vector<bool> visited(points.size(), false);
+
+        size_t id{0};
+        for (const auto &point : points)
+        {
+            if (not visited.at(id))
+            {
+                auto current_cluster{std::vector<int>{}};
+                euclideanClusterHelper(points, current_cluster, tree, visited, id, distanceTol);
+                clusters.push_back(current_cluster);
+            }
+            ++id;
+        }
+
+        return clusters;
+    }
+}
+template <typename PointT>
+std::vector<typename pcl::PointCloud<PointT>::Ptr> ProcessPointClouds<PointT>::ClusteringEuclidean(typename pcl::PointCloud<PointT>::Ptr cloud, float clusterTolerance, int minSize, int maxSize)
+{
+    // Time clustering process
+    auto startTime = std::chrono::steady_clock::now();
+    std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters;
+    std::vector<pcl::PointIndices> cluster_indices;
+
+    std::vector<std::vector<float>> points;
+    auto tree{std::make_unique<euclidean_clustering::KdTree>()};
+    points.reserve(cloud->points.size());
+
+    // awful for performance but needed
+    for (size_t index = 0; index < cloud->points.size(); ++index)
+    {
+        const auto& point{cloud->points.at(index)};
+        points.emplace_back(std::vector<float>{point.x, point.y, point.z});
+        tree->insert(points.back(), index);
+    }
+
+    auto cluster_result{euclideanCluster(points, tree.get(), clusterTolerance)};
+
+    // adapt results for pcl structure
+    for (const auto &cluster : cluster_result)
+    {
+        typename pcl::PointCloud<PointT>::Ptr cloud_cluster(new pcl::PointCloud<PointT>);
+
+        for (const auto &idx : cluster)
+        {
+            cloud_cluster->push_back((*cloud)[idx]);
+        }
+
+        if ((cloud_cluster->size() < minSize) or (cloud_cluster->size() > maxSize))
+        {
+            continue;
+        }
+
+        cloud_cluster->width = cloud_cluster->size();
+        cloud_cluster->height = 1;
+        cloud_cluster->is_dense = true;
+
+        clusters.push_back(cloud_cluster);
+    }
+
+    return clusters;
 }
 
 template <typename PointT>

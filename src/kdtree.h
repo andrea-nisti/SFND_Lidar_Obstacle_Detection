@@ -1,9 +1,7 @@
-/* \author Aaron Brown */
+#ifndef KD_TREE_CLUSTER
+#define KD_TREE_CLUSTER
 
-
-// Quiz on implementing kd tree
-
-#include "../../render/render.h"
+#include "render/render.h"
 #include <cmath>
 
 namespace euclidean_clustering
@@ -26,51 +24,13 @@ namespace euclidean_clustering
 			delete left;
 			delete right;
 		}
-	};
 
-	Node *makeNode(std::vector<float> point, int id)
-	{
-		auto node{new Node{point, id}};
-		return node;
-	}
-
-	enum class NodeSide
-	{
-		LEFT,
-		RIGHT
-	};
-
-	bool setChild(Node *node, Node *const child, NodeSide side)
-	{
-		if (node == nullptr or child == nullptr)
+		static Node *makeNode(std::vector<float> point, int id)
 		{
-			return false;
+			auto node{new Node{point, id}};
+			return node;
 		}
-
-		switch (side)
-		{
-		case NodeSide::LEFT:
-			if (node->left != nullptr)
-			{
-				return false;
-			}
-			node->left = child;
-			break;
-
-		case NodeSide::RIGHT:
-			if (node->right != nullptr)
-			{
-				return false;
-			}
-			node->right = child;
-			break;
-
-		default:
-			return false;
-			break;
-		}
-		return true;
-	}
+	};
 
 	struct KdTree
 	{
@@ -112,23 +72,23 @@ namespace euclidean_clustering
 		{
 			if (node != nullptr)
 			{
-				auto di{std::vector<float>(target.size(), 0)};
+				auto diff_vector{std::vector<float>(target.size(), 0)};
 				size_t idx{0};
-				for (auto &component : di)
+				for (auto &component : diff_vector)
 				{
 					component = fabs(node->point.at(idx) - target.at(idx));
 					++idx;
 				}
 
-				auto is_in_box{std::all_of(di.cbegin(), di.cend(), [distanceTol](float comp)
+				auto is_in_box{std::all_of(diff_vector.cbegin(), diff_vector.cend(), [distanceTol](float comp)
 										   { return comp <= distanceTol; })};
 
 				if (is_in_box)
 				{
 					// compute distance : e.g. sqrt(x*x + y*y + z*z)
-					float d{sqrtf(std::accumulate(di.begin(), di.end(), 0, [](float accumulator, float comp)
+					float distance{sqrtf(std::accumulate(diff_vector.begin(), diff_vector.end(), 0, [](float accumulator, float comp)
 												  { return accumulator + comp * comp; }))};
-					if (d <= distanceTol)
+					if (distance <= distanceTol)
 					{
 						ids.push_back((node->id));
 					}
@@ -148,7 +108,7 @@ namespace euclidean_clustering
 
 		void insert(std::vector<float> point, int id)
 		{
-			auto new_node{makeNode(point, id)};
+			auto new_node{Node::makeNode(point, id)};
 			auto target{root};
 			if (root == nullptr)
 			{
@@ -168,3 +128,5 @@ namespace euclidean_clustering
 	};
 
 } // namespace
+
+#endif

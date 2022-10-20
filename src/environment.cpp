@@ -55,7 +55,7 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr &viewer)
     renderPointCloud(viewer, segments.first, "Obstacles", Color{1, 0, 0});
     renderPointCloud(viewer, segments.second, "Plane", Color{0, 1, 0});
 
-    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> cloudClusters = processor.Clustering(segments.first, 1.0, 3, 30);
+    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> cloudClusters = processor.Clustering(segments.first, 0.3, 3, 30);
 
     int clusterId = 0;
     std::vector<Color> colors = {Color(1, 0, 0), Color(0, 1, 0), Color(0, 0, 1)};
@@ -70,6 +70,7 @@ void simpleHighway(pcl::visualization::PCLVisualizer::Ptr &viewer)
         renderBox(viewer, box, clusterId);
         ++clusterId;
     }
+
 }
 
 void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer, ProcessPointClouds<pcl::PointXYZI> &pointProcessorI, const pcl::PointCloud<pcl::PointXYZI>::Ptr &inputCloud)
@@ -81,33 +82,33 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer, ProcessPointCloud
     // renderPointCloud(viewer, inputCloud, "inputCloud");
 
     // filter point cloud
-    auto cloud_filtered{pointProcessorI.FilterCloud(inputCloud, 0.3, Eigen::Vector4f(-10, -6.0, -3.5, 1), Eigen::Vector4f(10, 6.0, 3.5, 1))};
+    auto cloud_filtered{pointProcessorI.FilterCloud(inputCloud, 0.3, Eigen::Vector4f(-20, -6.0, -3.5, 1), Eigen::Vector4f(50, 6.0, 3.5, 1))};
 
     // segment point cloud, render plane and pcl obstacles
-    auto cloud_segmented = pointProcessorI.SegmentPlaneRansac(cloud_filtered, 500, 0.4);
-    renderPointCloud(viewer, cloud_segmented.second, "Ground", Color(0, 1, 0));
+    auto cloud_segmented = pointProcessorI.SegmentPlaneRansac(cloud_filtered, 100, 0.15);
+    renderPointCloud(viewer, cloud_segmented.second, "Ground", Color(0, 1, 0.5));
     renderPointCloud(viewer, cloud_segmented.first, "Obstacles", Color(1, 0.5, 0));
 
-    // // euclidean clustering
-    // auto cloud_clusters = pointProcessorI.Clustering(cloud_segmented.first, 0.6, 5, 1000);
-    // std::vector<Color> colors = {Color(1.0, 0.0, 0.0), Color(0.0, 1.0, 0), Color(0.0, 0.0, 1.0)};
+    // euclidean clustering
+    auto cloud_clusters = pointProcessorI.ClusteringEuclidean(cloud_segmented.first, 0.4, 10, 400);
+    std::vector<Color> colors = {Color(1.0, 0.0, 0.0), Color(0.0, 1.0, 0), Color(0.0, 0.0, 1.0)};
 
-    // // fill boxes  and visual aids
-    // Box host_box = {-1.5, -1.7, -1, 2.6, 1.7, -0.4};
-    // renderBox(viewer, host_box, 0, Color(0.5, 0.5, 0.1), 0.8);
+    // fill boxes  and visuals
+    Box host_box = {-1.5, -1.7, -1, 2.6, 1.7, -0.4};
+    renderBox(viewer, host_box, 0, Color(0.5, 0.5, 0.1), 0.8);
 
-    // int clusterId = 1;
-    // for (pcl::PointCloud<pcl::PointXYZI>::Ptr cluster : cloud_clusters)
-    // {
-    //     auto color{colors[clusterId % colors.size()]};
-    //     std::cout << "cluster size ";
-    //     pointProcessorI.numPoints(cluster);
-    //     renderPointCloud(viewer, cluster, "obstCloud" + std::to_string(clusterId), color);
+    int clusterId = 1;
+    for (pcl::PointCloud<pcl::PointXYZI>::Ptr cluster : cloud_clusters)
+    {
+        auto color{colors[clusterId % colors.size()]};
+        std::cout << "cluster size ";
+        pointProcessorI.numPoints(cluster);
+        renderPointCloud(viewer, cluster, "obstCloud" + std::to_string(clusterId), color);
 
-    //     Box box = pointProcessorI.BoundingBox(cluster);
-    //     renderBox(viewer, box, clusterId, color, 0.5);
-    //     ++clusterId;
-    // }
+        Box box = pointProcessorI.BoundingBox(cluster);
+        renderBox(viewer, box, clusterId, color, 0.5);
+        ++clusterId;
+    }
 }
 
 // setAngle: SWITCH CAMERA ANGLE {XY, TopDown, Side, FPS}
