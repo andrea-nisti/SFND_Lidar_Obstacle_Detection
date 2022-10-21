@@ -90,7 +90,7 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr &viewer, ProcessPointCloud
     renderPointCloud(viewer, cloud_segmented.first, "Obstacles", Color(1, 0.5, 0));
 
     // euclidean clustering
-    auto cloud_clusters = pointProcessorI.ClusteringEuclidean(cloud_segmented.first, 0.4, 10, 400);
+    auto cloud_clusters = pointProcessorI.ClusteringEuclidean(cloud_segmented.first, 0.8, 10, 400);
     std::vector<Color> colors = {Color(1.0, 0.0, 0.0), Color(0.0, 1.0, 0), Color(0.0, 0.0, 1.0)};
 
     // fill boxes  and visuals
@@ -170,6 +170,7 @@ int main(int argc, char **argv)
         if (streamIterator == stream.end())
             streamIterator = stream.begin();
 
-        viewer->spinOnce(100);
+        // run at 30 fps
+        viewer->spinOnce(1000 / 30);
     }
 }

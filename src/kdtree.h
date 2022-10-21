@@ -55,8 +55,7 @@ namespace euclidean_clustering
 			}
 			else
 			{
-				auto dim{target->point.size()};
-				auto index{depth % dim};
+				auto index{depth % target->point.size()};
 				if (new_node->point.at(index) < target->point.at(index))
 				{
 					insertHelper(target->left, new_node, ++depth);
@@ -94,12 +93,14 @@ namespace euclidean_clustering
 					}
 				}
 
-				if ((target.at(depth % target.size()) - distanceTol) < node->point.at(depth % target.size()))
+				auto index{depth % target.size()};
+
+				if ((target.at(index) - distanceTol) < node->point.at(index))
 				{
 					searchHelper(target, node->left, distanceTol, ids, ++depth);
 				}
 
-				if ((target.at(depth % target.size()) + distanceTol) > node->point.at(depth % target.size()))
+				if ((target.at(index) + distanceTol) > node->point.at(index))
 				{
 					searchHelper(target, node->right, distanceTol, ids, ++depth);
 				}
@@ -113,6 +114,7 @@ namespace euclidean_clustering
 			if (root == nullptr)
 			{
 				root = new_node;
+				return;
 			}
 
 			insertHelper(target, new_node);
